@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import html
 import random
 from datetime import datetime
 from typing import Any
@@ -41,59 +40,59 @@ class ContentProvider:
         random.shuffle(urls)
         for feed_url in urls:
             parsed = feedparser.parse(feed_url)
-            candidates = parsed.entries[:25]
+            candidates = parsed.entries[:20]
             random.shuffle(candidates)
             for item in candidates:
-                external_id = item.get("id") or item.get("guid") or item.get("link")
+                external_id = item.get("id") or item.get("link")
                 if not external_id or external_id in seen_ids:
                     continue
                 title = normalize_text(item.get("title", "Интересная находка"))
-                summary = safe_caption(self._extract_summary(item), limit=700)
-                media_url = self._extract_media(item)
-                link = item.get("link")
+                summary = safe_caption(item.get("summary", item.get("description", "")), limit=500)
+                media_url = None
+                media_candidates = item.get("media_content") or item.get("media_thumbnail") or []
+                if media_candidates:
+                    media_url = media_candidates[0].get("url")
+                if not media_url:
+                    soup = BeautifulSoup(item.get("summary", "") or "", "html.parser")
+                    img = soup.find("img")
+                    if img and img.get("src"):
+                        media_url = img["src"]
                 return {
                     "category": category,
                     "source_type": "rss",
                     "source_url": feed_url,
                     "external_id": external_id,
                     "title": title,
-                    "text": self._render_caption(category, title, summary, link),
+                    "text": self._render_caption(category, title, summary, item.get("link")),
                     "media_url": media_url,
-                    "link": link,
+                    "link": item.get("link"),
                 }
-        return None
-
-    def _extract_summary(self, item: Any) -> str:
-        raw = item.get("summary", item.get("description", ""))
-        soup = BeautifulSoup(raw or "", "html.parser")
-        text = soup.get_text(" ", strip=True)
-        text = html.unescape(text)
-        return normalize_text(text)
-
-    def _extract_media(self, item: Any) -> str | None:
-        media_candidates = item.get("media_content") or item.get("media_thumbnail") or []
-        if media_candidates:
-            first = media_candidates[0]
-            if isinstance(first, dict):
-                return first.get("url")
-        soup = BeautifulSoup(item.get("summary", "") or item.get("description", "") or "", "html.parser")
-        img = soup.find("img")
-        if img and img.get("src"):
-            return img["src"]
         return None
 
     async def _holiday_item(self, category: str) -> dict[str, Any] | None:
         today = datetime.utcnow().date()
-        title = f"Сегодняшний повод для поста — {today.strftime('%d.%m')}"
-        text = (
-            "📅 День для быстрого вовлекающего поста.\n\n"
-            "Спросите подписчиков, что они открыли для себя сегодня: новый бот, mini app, игру, мем или полезный сервис. "
-            "Такие короткие посты часто хорошо собирают комментарии и реакции."
-        )
+        async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
+            response = await client.get(f"https://date.nager.at/api/v3/PublicHolidays/{today.year}/AT")
+            response.raise_for_status()
+            data = response.json()
+        holidays_today = [x for x in data if x.get("date") == today.isoformat()]
+        if holidays_today:
+            holiday = random.choice(holidays_today)
+            title = f"Сегодня: {holiday['localName']}"
+            text = (
+                f"🎉 {holiday['localName']}\n\n"
+                f"Сегодня в Австрии отмечают этот день. Можно обыграть тему в комментариях, мемах или мини-подборке."
+            )
+        else:
+            title = f"День {today.strftime('%d.%m')}"
+            text = (
+                "📅 Новый день — новый повод для контента.\n\n"
+                "Сделайте быстрый интерактив: спросите подписчиков, что у них сегодня интересного, какую игру проходят или какой бот советуют."
+            )
         return {
             "category": category,
             "source_type": "holiday",
-            "source_url": "internal",
+            "source_url": "https://date.nager.at/",
             "external_id": f"holiday:{today.isoformat()}",
             "title": title,
             "text": text,
@@ -121,6 +120,15 @@ class ContentProvider:
         }
 
     async def _wikimedia_featured(self, category: str, seen_ids: set[str]) -> dict[str, Any] | None:
+        async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
+            response = await client.get("https://commons.wikimedia.org/w/api.php", params={
+                "action": "query",
+                "format": "json",
+                "prop": "imageinfo",
+                "titles": "Commons:Featured pictures/chronological",
+                "iiprop": "url",
+            })
+            response.raise_for_status()
         external_id = f"wikimedia:{datetime.utcnow().date().isoformat()}"
         if external_id in seen_ids:
             return None
@@ -130,16 +138,13 @@ class ContentProvider:
             "source_url": "https://commons.wikimedia.org/",
             "external_id": external_id,
             "title": "Фото дня",
-            "text": "🖼 Визуальный пост дня. Сохраняйте, делитесь и напишите в комментариях, что думаете.",
+            "text": "🖼 Сегодняшний визуальный пост. Сохраняйте, делитесь и пишите в комментариях, какая картинка зашла больше всего.",
             "media_url": "https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png",
         }
 
     def _render_caption(self, category: str, title: str, summary: str, link: str | None) -> str:
         label = self.sources["categories"][category]["label"]
-        category_note = self.sources["categories"][category].get("note", "")
         body = f"🔥 {title}\n\n{summary}"
-        if category_note:
-            body += f"\n\n{category_note}"
         if link:
             body += f"\n\nИсточник: {link}"
         body += f"\n\n#{category} #{label.replace(' ', '')[:20]}"

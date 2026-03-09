@@ -9,19 +9,10 @@ from app.utils.text import contains_bad_language
 router = Router(name="moderation")
 
 
-def setup_moderation_handlers(bot: Bot, storage: Storage, discussion_chat: str, warn_text: str):
+def setup_moderation_handlers(bot: Bot, storage: Storage, discussion_chat_id: int, warn_text: str):
     @router.message()
     async def moderate(message: Message) -> None:
-        chat_match = False
-        if isinstance(discussion_chat, str):
-            if discussion_chat.startswith("@"):
-                chat_match = (message.chat.username or "").lower() == discussion_chat.lstrip("@").lower()
-            else:
-                chat_match = str(message.chat.id) == discussion_chat
-        else:
-            chat_match = message.chat.id == discussion_chat
-
-        if not chat_match:
+        if message.chat.id != discussion_chat_id:
             return
         if not message.text:
             return

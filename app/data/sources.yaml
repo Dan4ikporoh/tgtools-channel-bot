@@ -1,53 +1,33 @@
 categories:
-  telegram_news:
-    label: "Telegram News"
-    note: "Коротко перескажи главное и добавь, как это можно применить в Telegram-каналах, ботах или mini apps."
+  world_news:
+    label: "Мировые новости"
     type: rss
     feed_urls:
-      - "https://telegram.org/blog/rss"
-      - "https://www.theverge.com/rss/tech/index.xml"
-
-  ai_tools:
-    label: "AI Tools"
-    note: "Сделай акцент на пользе: чем инструмент помогает авторам, админам и разработчикам."
+      - "https://feeds.bbci.co.uk/news/world/rss.xml"
+      - "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
+  tech:
+    label: "Технологии"
     type: rss
     feed_urls:
-      - "https://openai.com/news/rss.xml"
-      - "https://techcrunch.com/category/artificial-intelligence/feed/"
-      - "https://venturebeat.com/category/ai/feed/"
-
-  games:
-    label: "Games"
-    note: "Оформи как быстрый дайджест для подписчиков: что вышло и что стоит попробовать."
-    type: rss
-    feed_urls:
-      - "https://www.ign.com/rss"
-      - "https://www.gamespot.com/feeds/mashup/"
-
-  memes:
-    label: "Memes"
-    note: "Сопроводи пост короткой шуткой или вовлекающим вопросом, чтобы люди отвечали в комментариях."
-    type: rss
-    feed_urls:
-      - "https://knowyourmeme.com/feed"
-
-  gadgets:
-    label: "Gadgets"
-    note: "Добавь понятную подводку: почему новость интересна обычному пользователю или владельцу канала."
-    type: rss
-    feed_urls:
+      - "https://techcrunch.com/feed/"
       - "https://www.theverge.com/rss/index.xml"
-      - "https://www.wired.com/feed/rss"
-
+  gaming:
+    label: "Игры"
+    type: rss
+    feed_urls:
+      - "https://www.pcgamer.com/rss/"
+      - "https://www.gamesradar.com/feeds/articletype/news/"
   holidays:
-    label: "Interactive"
+    label: "Праздники и события дня"
     type: holiday
-
   space:
-    label: "Space"
-    note: "Подай пост как красивую паузу среди новостей и инструментов."
+    label: "Космос и красивые фото"
     type: nasa_apod
-
-  photo_day:
-    label: "PhotoDay"
+  wiki_featured:
+    label: "Фото дня"
     type: wikimedia_featured
+  channel_tools:
+    label: "Полезные Telegram-сервисы"
+    type: rss
+    feed_urls:
+      - "https://www.producthunt.com/feed"

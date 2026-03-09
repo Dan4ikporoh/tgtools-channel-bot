@@ -63,7 +63,7 @@ async def main() -> None:
                     await storage.increment_pin(post_id)
 
     dp.include_router(setup_admin_handlers(storage, provider, ranker, poster, analytics, settings.owner_ids, settings.channel_id))
-    dp.include_router(setup_moderation_handlers(bot, storage, settings.discussion_chat, settings.moderation_warn_text))
+    dp.include_router(setup_moderation_handlers(bot, storage, settings.discussion_chat_id, settings.moderation_warn_text))
 
     scheduler.add_daily_jobs(settings.post_times, publish_job)
     scheduler.add_interval_job(90, sync_stats_job, "sync_stats")
