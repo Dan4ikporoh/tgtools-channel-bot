@@ -1,0 +1,7 @@
+services:
+  - type: worker
+    name: telegram-channel-autopilot
+    env: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m app.main
